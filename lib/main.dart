@@ -1,6 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/adapters.dart';
 
-void main() {
+import 'models/expense.dart';
+
+Future<void> main() async {
+  /// Ensures Flutter bindings are initialized before async work
+  /// Interview Point: Required when using async before runApp.
+  WidgetsFlutterBinding.ensureInitialized();
+
+  /// Initializes Hive local database
+  await Hive.initFlutter();
+
+  /// Register adapters before opening boxes
+  Hive.registerAdapter(CategoryAdapter());
+  Hive.registerAdapter(ExpenseAdapter());
+
+  /// Box = Local Table
+  await Hive.openBox<Expense>('expenses');
   runApp(const MyApp());
 }
 
