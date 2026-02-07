@@ -7,30 +7,51 @@ import '../models/expense.dart';
 import '../services/expense_local_repository.dart';
 
 class AddExpenseScreen extends StatelessWidget {
-  const AddExpenseScreen({super.key});
+  final Expense? expense;
+
+  const AddExpenseScreen({super.key,this.expense});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => ExpenseFormCubit(ExpenseLocalRepository()),
-      child: const AddExpenseView(),
+      child:  AddExpenseView(expense: expense,),
     );
   }
 }
 
 class AddExpenseView extends StatefulWidget {
-  const AddExpenseView({super.key});
+  final Expense? expense;
+
+  const AddExpenseView({super.key,this.expense});
 
   @override
   State<AddExpenseView> createState() => _AddExpenseViewState();
 }
 
 class _AddExpenseViewState extends State<AddExpenseView> {
+
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
 
   Category _category = Category.food;
-  final DateTime _date = DateTime.now();
+   DateTime _date = DateTime.now();
+
+
+
+  @override
+  void initState() {
+    super.initState();
+
+    final exp = widget.expense;
+
+    if (exp != null) {
+      _titleController.text = exp.title;
+      _amountController.text = exp.amount.toString();
+      _category = exp.category;
+      _date = DateTime.now();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +95,7 @@ class _AddExpenseViewState extends State<AddExpenseView> {
               ElevatedButton(
                 onPressed: () {
                   context.read<ExpenseFormCubit>().saveExpense(
+                    existingExpense: widget.expense,
                     title: _titleController.text,
                     amount: double.tryParse(_amountController.text) ?? 0,
                     category: _category,

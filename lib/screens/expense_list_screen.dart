@@ -94,13 +94,34 @@ class _ExpenseListViewState extends State<ExpenseListView> {
                   subtitle: Text(
                     '${expense.category.name} • ₹${expense.amount}',
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {
-                      context
-                          .read<ExpenseListCubit>()
-                          .deleteExpense(expense.id);
-                    },
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+
+                    children: [
+                      IconButton(onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddExpenseScreen(expense: expense),
+                          ),
+                        );
+
+                        if (!context.mounted) return;
+                        if (result == true) {
+                          context.read<ExpenseListCubit>().loadExpenses();
+                        }
+
+                      }, icon: Icon(Icons.edit)),
+
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () {
+                          context
+                              .read<ExpenseListCubit>()
+                              .deleteExpense(expense.id);
+                        },
+                      ),
+                    ],
                   ),
                 );
               },

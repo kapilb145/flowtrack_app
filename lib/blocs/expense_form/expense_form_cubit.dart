@@ -3,6 +3,7 @@
 
 
 import 'package:flowtrack_app/blocs/expense_form/expense_form_state.dart';
+import 'package:flowtrack_app/blocs/expense_list_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../models/expense.dart';
@@ -14,9 +15,8 @@ class ExpenseFormCubit extends Cubit<ExpenseFormState>{
 
   ExpenseFormCubit(this.repository) : super(ExpenseFormInitial());
 
-
-
   Future<void> saveExpense({
+    Expense? existingExpense,
     required String title,
     required double amount,
     required Category category,
@@ -31,7 +31,14 @@ class ExpenseFormCubit extends Cubit<ExpenseFormState>{
         return;
       }
 
-      final expense = Expense(
+      final expense = existingExpense != null
+          ? existingExpense.copyWith(
+        title: title,
+        amount: amount,
+        category: category,
+        date: date,
+      )
+          : Expense(
         id: IdGenerator.generate(),
         title: title,
         amount: amount,
@@ -39,13 +46,24 @@ class ExpenseFormCubit extends Cubit<ExpenseFormState>{
         date: date,
       );
 
-      await repository.addExpense(expense);
+      if (existingExpense != null) {
+        await repository.updateExpense(expense);
+      } else {
+        await repository.addExpense(expense);
+      }
 
       emit(ExpenseFormSuccess());
     } catch (_) {
       emit(const ExpenseFormError('Failed to save expense'));
     }
   }
+
+
+
+
+
+
+
 }
 
 
