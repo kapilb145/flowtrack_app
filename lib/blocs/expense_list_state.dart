@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:flowtrack_app/models/expense.dart';
+import 'package:flow_track_app/models/expense.dart';
 
 abstract class ExpenseListState extends Equatable{
   const ExpenseListState();

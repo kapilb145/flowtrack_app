@@ -1,5 +1,5 @@
-import 'package:flowtrack_app/screens/expense_list_screen.dart';
-import 'package:flowtrack_app/utils/app_theme.dart';
+import 'package:flow_track_app/screens/expense_list_screen.dart';
+import 'package:flow_track_app/utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 

@@ -1,4 +1,4 @@
-import 'package:flowtrack_app/services/expense_repository.dart';
+import 'package:flow_track_app/services/expense_repository.dart';
 import 'expense_list_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

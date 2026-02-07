@@ -1,4 +1,4 @@
-import 'package:flowtrack_app/services/expense_repository.dart';
+import 'package:flow_track_app/services/expense_repository.dart';
 import 'package:hive/hive.dart';
 
 import '../models/expense.dart';

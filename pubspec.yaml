@@ -1,4 +1,4 @@
-name: flowtrack_app
+name: flow_track_app
 description: "FlowTrack – Smart Expense & Habit Tracker"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
