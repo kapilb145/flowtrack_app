@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../blocs/expense_list_cubit.dart';
 import '../blocs/expense_list_state.dart';
+import '../models/expense.dart';
 import '../services/expense_local_repository.dart';
 import 'add_expense_screen.dart';
 
@@ -78,51 +79,82 @@ class _ExpenseListViewState extends State<ExpenseListView> {
 
           /// Loaded State
           if (state is ExpenseListLoaded) {
-            if (state.expenses.isEmpty) {
-              return const Center(child: Text('No Expenses Yet'));
-            }
+            // if (state.expenses.isEmpty) {
+            //   return const Center(child: Text('No Expenses Yet'));
+            // }
 
-            return ListView.builder(
-              itemCount: state.expenses.length,
-              itemBuilder: (context, index) {
-                final expense = state.expenses[index];
+            return Column(
+              children: [
 
-                return ListTile(
-                  title: Text(expense.title),
-                  subtitle: Text(
-                    '${expense.category.name} • ₹${expense.amount}',
+                DropdownButton<Category?>(
+                  hint: const Text('Filter Category'),
+                  value: state.selectedCategory,
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('All')),
+                    ...Category.values.map((c) =>
+                        DropdownMenuItem(value: c, child: Text(c.name))),
+                  ],
+                  onChanged: (value) {
+                    context.read<ExpenseListCubit>().filterByCategory(value);
+                  },
+                ),
+
+                TextField(
+                  decoration: const InputDecoration(
+                    hintText: 'Search expenses...',
+                    prefixIcon: Icon(Icons.search),
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  onChanged: (value) {
+                    context.read<ExpenseListCubit>().search(value);
+                  },
+                ),
 
-                    children: [
-                      IconButton(onPressed: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AddExpenseScreen(expense: expense),
-                          ),
-                        );
+                Expanded(
+                  child: state.expenses.isNotEmpty ?
+                  ListView.builder(
+                    itemCount: state.expenses.length,
+                    itemBuilder: (context, index) {
+                      final expense = state.expenses[index];
 
-                        if (!context.mounted) return;
-                        if (result == true) {
-                          context.read<ExpenseListCubit>().loadExpenses();
-                        }
+                      return ListTile(
+                        title: Text(expense.title),
+                        subtitle: Text(
+                          '${expense.category.name} • ₹${expense.amount}',
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
 
-                      }, icon: Icon(Icons.edit)),
+                          children: [
+                            IconButton(onPressed: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AddExpenseScreen(expense: expense),
+                                ),
+                              );
 
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () {
-                          context
-                              .read<ExpenseListCubit>()
-                              .deleteExpense(expense.id);
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
+                              if (!context.mounted) return;
+                              if (result == true) {
+                                context.read<ExpenseListCubit>().loadExpenses();
+                              }
+
+                            }, icon: Icon(Icons.edit)),
+
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () {
+                                context
+                                    .read<ExpenseListCubit>()
+                                    .deleteExpense(expense.id);
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ) : const Center(child: Text('No Expenses Yet')),
+                ),
+              ],
             );
           }
 

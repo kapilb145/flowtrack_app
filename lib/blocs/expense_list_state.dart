@@ -11,15 +11,31 @@ class ExpenseListInitial extends ExpenseListState{}
 
 class ExpenseListLoading extends ExpenseListState{}
 
-class ExpenseListLoaded extends ExpenseListState{
-
+class ExpenseListLoaded extends ExpenseListState {
   final List<Expense> expenses;
+  final String searchQuery;
+  final Category? selectedCategory;
 
-  const ExpenseListLoaded(this.expenses);
+  const ExpenseListLoaded({
+    required this.expenses,
+    this.searchQuery = '',
+    this.selectedCategory,
+  });
 
-@override
-  List<Object?> get props => [expenses];
+  @override
+  List<Object?> get props => [expenses, searchQuery, selectedCategory];
 
+  ExpenseListLoaded copyWith({
+    List<Expense>? expenses,
+    String? searchQuery,
+    Category? selectedCategory,
+  }) {
+    return ExpenseListLoaded(
+      expenses: expenses ?? this.expenses,
+      searchQuery: searchQuery ?? this.searchQuery,
+      selectedCategory: selectedCategory ?? this.selectedCategory,
+    );
+  }
 }
 
 class ExpenseListError extends ExpenseListState{
