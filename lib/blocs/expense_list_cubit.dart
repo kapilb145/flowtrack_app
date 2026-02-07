@@ -74,6 +74,35 @@ class ExpenseListCubit extends Cubit<ExpenseListState>{
 
 
 
+  double getTotal(List<Expense> list) {
+    return list.fold(0, (sum, e) => sum + e.amount);
+  }
+
+  double getThisMonth(List<Expense> list) {
+    final now = DateTime.now();
+
+    return list
+        .where((e) =>
+    e.date.month == now.month && e.date.year == now.year)
+        .fold(0, (sum, e) => sum + e.amount);
+  }
+
+  Category? getTopCategory(List<Expense> list) {
+    if (list.isEmpty) return null;
+
+    final map = <Category, double>{};
+
+    for (final e in list) {
+      map[e.category] = (map[e.category] ?? 0) + e.amount;
+    }
+
+    map.removeWhere((k, v) => v == 0);
+
+    return map.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
+  }
+
 
 
 }

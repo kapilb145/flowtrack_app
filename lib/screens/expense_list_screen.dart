@@ -7,7 +7,9 @@ import '../blocs/expense_list_cubit.dart';
 import '../blocs/expense_list_state.dart';
 import '../models/expense.dart';
 import '../services/expense_local_repository.dart';
+import '../widgets/summary_card.dart';
 import 'add_expense_screen.dart';
+import 'analytics_screen.dart';
 
 class ExpenseListScreen extends StatelessWidget {
   const ExpenseListScreen({super.key});
@@ -15,17 +17,7 @@ class ExpenseListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-
-      /// Inject repository into cubit
-      /// Interview Point: Dependency Injection
-      create: (_) =>
-      ExpenseListCubit(
-        ExpenseLocalRepository(),
-      )
-        ..loadExpenses(), // load immediately
-      child: const ExpenseListView(),
-    );
+    return const ExpenseListView();
   }
 
 
@@ -45,6 +37,7 @@ class _ExpenseListViewState extends State<ExpenseListView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push(
@@ -64,6 +57,20 @@ class _ExpenseListViewState extends State<ExpenseListView> {
 
       appBar: AppBar(
         title: const Text('FlowTrack'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.pie_chart),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AnalyticsScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+
       ),
       body: BlocBuilder<ExpenseListCubit, ExpenseListState>(
         builder: (context, state) {
@@ -79,6 +86,8 @@ class _ExpenseListViewState extends State<ExpenseListView> {
 
           /// Loaded State
           if (state is ExpenseListLoaded) {
+            final cubit = context.read<ExpenseListCubit>();
+
             // if (state.expenses.isEmpty) {
             //   return const Center(child: Text('No Expenses Yet'));
             // }
@@ -108,6 +117,29 @@ class _ExpenseListViewState extends State<ExpenseListView> {
                     context.read<ExpenseListCubit>().search(value);
                   },
                 ),
+
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: SummaryCard(
+                        title: 'Total',
+                        value: '₹${cubit.getTotal(state.expenses)}',
+                      ),
+                    ),
+                    Expanded(
+                      child: SummaryCard(
+                        title: 'This Month',
+                        value: '₹${cubit.getThisMonth(state.expenses)}',
+                      ),
+                    ),
+                  ],
+                ),
+                SummaryCard(
+                  title: 'Top Category',
+                  value: cubit.getTopCategory(state.expenses)?.name ?? 'None',
+                ),
+
 
                 Expanded(
                   child: state.expenses.isNotEmpty ?
