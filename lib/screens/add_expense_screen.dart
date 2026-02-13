@@ -1,8 +1,11 @@
+import 'package:flow_track_app/services/expense_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../blocs/expense_form/expense_form_cubit.dart';
 import '../blocs/expense_form/expense_form_state.dart';
+import '../di/service_locator.dart';
 import '../models/expense.dart';
 import '../services/expense_local_repository.dart';
 
@@ -14,7 +17,7 @@ class AddExpenseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => ExpenseFormCubit(ExpenseLocalRepository()),
+      create: (_) => ExpenseFormCubit(sl<ExpenseRepository>()),
       child:  AddExpenseView(expense: expense,),
     );
   }
@@ -36,6 +39,10 @@ class _AddExpenseViewState extends State<AddExpenseView> {
 
   Category _category = Category.food;
    DateTime _date = DateTime.now();
+  final _formKey = GlobalKey<FormState>();
+  final _titleFocus = FocusNode();
+  final _amountFocus = FocusNode();
+
 
 
 
@@ -70,44 +77,78 @@ class _AddExpenseViewState extends State<AddExpenseView> {
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-              ),
-              TextField(
-                controller: _amountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Amount'),
-              ),
-              DropdownButton<Category>(
-                value: _category,
-                items: Category.values
-                    .map((c) => DropdownMenuItem(
-                  value: c,
-                  child: Text(c.name),
-                ))
-                    .toList(),
-                onChanged: (value) => setState(() => _category = value!),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  context.read<ExpenseFormCubit>().saveExpense(
-                    existingExpense: widget.expense,
-                    title: _titleController.text,
-                    amount: double.tryParse(_amountController.text) ?? 0,
-                    category: _category,
-                    date: _date,
-                  );
-                },
-                child: const Text('Save'),
-              )
-            ],
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  focusNode: _titleFocus,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Title required';
+                    }
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(_amountFocus);
+                  },
+                ),
+                TextFormField(
+                  controller: _amountController,
+                  focusNode: _amountFocus,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Amount'),
+    validator: (value) {
+    final number = double.tryParse(value ?? '');
+    if (number == null || number <= 0) {
+    return 'Enter valid amount';
+    }
+    return null;
+    },
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                  ],
+                ),
+                DropdownButton<Category>(
+                  value: _category,
+                  items: Category.values
+                      .map((c) => DropdownMenuItem(
+                    value: c,
+                    child: Text(c.name),
+                  ))
+                      .toList(),
+                  onChanged: (value) => setState(() => _category = value!),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    if (!_formKey.currentState!.validate()) return;
+
+                    context.read<ExpenseFormCubit>().saveExpense(
+                      existingExpense: widget.expense,
+                      title: _titleController.text,
+                      amount: double.tryParse(_amountController.text) ?? 0,
+                      category: _category,
+                      date: _date,
+                    );
+                  },
+                  child: const Text('Save'),
+                )
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _titleFocus.dispose();
+    _amountFocus.dispose();
+    super.dispose();
   }
 }

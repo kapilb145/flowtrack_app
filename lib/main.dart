@@ -1,11 +1,14 @@
+import 'package:flow_track_app/screens/expense_detail_screen.dart';
 import 'package:flow_track_app/screens/expense_list_screen.dart';
 import 'package:flow_track_app/services/expense_local_repository.dart';
+import 'package:flow_track_app/services/expense_repository.dart';
 import 'package:flow_track_app/utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/adapters.dart';
 
 import 'blocs/expense_list_cubit.dart';
+import 'di/service_locator.dart';
 import 'models/expense.dart';
 
 Future<void> main() async {
@@ -19,6 +22,7 @@ Future<void> main() async {
   /// Register adapters before opening boxes
   Hive.registerAdapter(CategoryAdapter());
   Hive.registerAdapter(ExpenseAdapter());
+  setupDI();
 
   /// Box = Local Table
   await Hive.openBox<Expense>('expenses');
@@ -34,14 +38,20 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => ExpenseListCubit(ExpenseLocalRepository())
+          create: (_) => ExpenseListCubit(sl<ExpenseRepository>())
             ..loadExpenses(),
         ),
       ],
+
+
       child: MaterialApp(
         title: 'FlowTrack',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.theme,
+        routes: {
+          ExpenseDetailScreen.routeName: (_) =>
+          const ExpenseDetailScreen(),
+        },
         home: const ExpenseListScreen(),
       ),
     );

@@ -6,20 +6,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/expense_list_cubit.dart';
 import '../blocs/expense_list_state.dart';
 import '../models/expense.dart';
-import '../services/expense_local_repository.dart';
+import '../utils/export_utils.dart';
 import '../widgets/summary_card.dart';
 import 'add_expense_screen.dart';
 import 'analytics_screen.dart';
+import 'expense_detail_screen.dart';
 
 class ExpenseListScreen extends StatelessWidget {
   const ExpenseListScreen({super.key});
-
 
   @override
   Widget build(BuildContext context) {
     return const ExpenseListView();
   }
-
 
 }
 
@@ -36,6 +35,7 @@ class ExpenseListView extends StatefulWidget {
 class _ExpenseListViewState extends State<ExpenseListView> {
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
 
       floatingActionButton: FloatingActionButton(
@@ -69,6 +69,17 @@ class _ExpenseListViewState extends State<ExpenseListView> {
               );
             },
           ),
+
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: () {
+              final state = context.read<ExpenseListCubit>().state;
+
+              if (state is ExpenseListLoaded) {
+                ExportUtils.exportToCsv(state.expenses);
+              }
+            },
+          ),
         ],
 
       ),
@@ -88,9 +99,10 @@ class _ExpenseListViewState extends State<ExpenseListView> {
           if (state is ExpenseListLoaded) {
             final cubit = context.read<ExpenseListCubit>();
 
-            // if (state.expenses.isEmpty) {
-            //   return const Center(child: Text('No Expenses Yet'));
-            // }
+            final width = MediaQuery.of(context).size.width;
+            final isTablet = width > 600;
+            final isDesktop = width > 1000;
+
 
             return Column(
               children: [
@@ -143,48 +155,88 @@ class _ExpenseListViewState extends State<ExpenseListView> {
 
                 Expanded(
                   child: state.expenses.isNotEmpty ?
-                  ListView.builder(
+
+
+          (!isTablet
+          // ---------- MOBILE ----------
+          ?   ListView.builder(
                     itemCount: state.expenses.length,
                     itemBuilder: (context, index) {
                       final expense = state.expenses[index];
 
                       return ListTile(
-                        title: Text(expense.title),
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            ExpenseDetailScreen.routeName,
+                            arguments: expense,
+                          );
+                        },
+                        title: Hero(
+                            tag: expense.id,
+                        child: Material(
+                              color: Colors.transparent,
+                              child: Text(expense.title),
+                            ),
+                        ),
                         subtitle: Text(
                           '${expense.category.name} • ₹${expense.amount}',
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-
-                          children: [
-                            IconButton(onPressed: () async {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => AddExpenseScreen(expense: expense),
-                                ),
-                              );
-
-                              if (!context.mounted) return;
-                              if (result == true) {
-                                context.read<ExpenseListCubit>().loadExpenses();
-                              }
-
-                            }, icon: Icon(Icons.edit)),
-
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () {
-                                context
-                                    .read<ExpenseListCubit>()
-                                    .deleteExpense(expense.id);
-                              },
-                            ),
-                          ],
+                        trailing: _actionButtons(context, expense
                         ),
                       );
                     },
-                  ) : const Center(child: Text('No Expenses Yet')),
+                  )
+
+              : GridView.builder(
+            padding: const EdgeInsets.all(12),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isDesktop ? 4 : 2,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+            ),
+            itemCount: state.expenses.length,
+            itemBuilder: (context, index) {
+              final expense = state.expenses[index];
+
+              return Card(
+                child: InkWell(
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      ExpenseDetailScreen.routeName,
+                      arguments: expense,
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Hero(
+                          tag: expense.id,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Text(
+                              expense.title,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text('₹${expense.amount}'),
+                        Text(expense.category.name),
+                        const SizedBox(height: 8),
+                        _actionButtons(context, expense),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ))
+              : const Center(child: Text('No Expenses Yet')),
                 ),
               ],
             );
@@ -196,4 +248,35 @@ class _ExpenseListViewState extends State<ExpenseListView> {
       ),
     );
   }
+
+  Widget _actionButtons(BuildContext context, Expense expense) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.edit),
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AddExpenseScreen(expense: expense),
+              ),
+            );
+
+            if (!context.mounted) return;
+            if (result == true) {
+              context.read<ExpenseListCubit>().loadExpenses();
+            }
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: () {
+            context.read<ExpenseListCubit>().deleteExpense(expense.id);
+          },
+        ),
+      ],
+    );
+  }
+
 }
